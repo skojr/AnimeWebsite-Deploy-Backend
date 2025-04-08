@@ -29,161 +29,84 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
     private final JwtService jwtService;
-    private final CsrfService csrfService;
-    private final UserRepository userRepository;
-    private final UserDetailsService userDetailsService;
 
-    public UserController(UserService userService, JwtService jwtService, CsrfService csrfService, UserRepository userRepository, @Qualifier("userDetailsService") UserDetailsService userDetailsService) {
+    public UserController(UserService userService, JwtService jwtService) {
         this.userService = userService;
         this.jwtService = jwtService;
-        this.csrfService = csrfService;
-        this.userRepository = userRepository;
-        this.userDetailsService = userDetailsService;
     }
 
-    @PutMapping({"users/updateUser"})
+    @PutMapping({"users/{id}"})
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<?> updateUser(@RequestHeader("X-CSRF-TOKEN") String csrfToken,
-                                        @RequestBody UpdateUserRequest updateUserRequest,
-                                        HttpServletRequest httpServletRequest,
-                                        HttpSession session) {
-        try {
-            // Validate CSRF token
-            csrfService.validateCsrfToken(session, csrfToken);
-
-            // Validate JWT token and extract user ID
-            Long userId = jwtService.validateAndExtractUserId(httpServletRequest);
-
-            // Ensure user exists
-            Optional<CustomUser> userOpt = userService.getUser(userId);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest request, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long tokenUserId = this.jwtService.extractUserId(token);
+        if (!tokenUserId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization Denied");
+        } else {
+            try {
+                UserResponse updatedUser = this.userService.updateUser(id, request);
+                return ResponseEntity.ok(updatedUser);
+            } catch (RuntimeException var7) {
+                RuntimeException e = var7;
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
             }
-
-            // Perform the update
-            userService.updateUser(userId, updateUserRequest);
-            return ResponseEntity.noContent().build(); // 204 No Content for successful updates
-
-        } catch (CsrfException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @DeleteMapping({"users/deleteUser"})
+    @DeleteMapping({"users/{id}"})
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<?> deleteUser(@RequestHeader("X-CSRF-TOKEN") String csrfToken,
-                                        @RequestBody DeleteUserRequest deleteRequest,
-                                        HttpServletRequest httpServletRequest,
-                                        HttpSession session) {
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, @RequestHeader("Authorization") String authHeader, @RequestBody DeleteUserRequest request) {
         try {
-            // Validate CSRF token
-            csrfService.validateCsrfToken(session, csrfToken);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                if (token.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Empty token");
+                } else {
+                    Long tokenUserId;
+                    try {
+                        tokenUserId = this.jwtService.extractUserId(token);
+                    } catch (Exception var7) {
+                        Exception e = var7;
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token: " + e.getMessage());
+                    }
 
-            // Validate JWT token and extract user ID
-            Long userId = jwtService.validateAndExtractUserId(httpServletRequest);
-
-            // Ensure the authenticated user is authorized to delete this resource
-            Optional<CustomUser> userOpt = userService.getUser(userId);
-
-            // Check if user exists
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+                    if (!tokenUserId.equals(id)) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization Denied");
+                    } else {
+                        this.userService.deleteUser(id, request);
+                        return ResponseEntity.noContent().build();
+                    }
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Authorization header");
             }
-
-            // Perform the deletion
-            userService.deleteUser(userId, deleteRequest);
-            return ResponseEntity.noContent().build(); // 204 No Content for successful deletions
-
-        } catch (CsrfException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (RuntimeException e) {
+        } catch (RuntimeException var8) {
+            RuntimeException e = var8;
+            System.out.println("Error deleting user");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/users/getUser")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("X-CSRF-TOKEN") String csrfToken,
-                                            HttpServletRequest httpServletRequest,
-                                            HttpSession session) {
-        try {
-            // Validate CSRF token
-            csrfService.validateCsrfToken(session, csrfToken);
-
-            // Validate JWT token and extract user ID
-            Long userId = jwtService.validateAndExtractUserId(httpServletRequest);
-
-            // Fetch user from the database
-            Optional<CustomUser> userOpt = userService.getUser(userId);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-            }
-
-            // Map user to a response object
-            CustomUser user = userOpt.get();
-            System.out.println(user.getId());
-            UserResponse userResponse = UserResponse.builder()
-                    .id(user.getId())
-                    .email(user.getEmail())
-                    .role(user.getRole().name())
-                    .build();
-
-            return ResponseEntity.ok(userResponse);
-
-        } catch (CsrfException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (RuntimeException e) {
+        } catch (Exception var9) {
+            System.out.println("Unexpected error deleting user");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
         }
     }
 
-
-
-
-//    @GetMapping({"users/{id}"})
-//    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-//    public ResponseEntity<?> getUserById(@PathVariable Long id,
-//                                         @RequestHeader("X-CSRF-TOKEN") String csrfToken,
-//                                         HttpServletRequest httpServletRequest,
-//                                         HttpSession session) {
-//        try {
-//            // Validate CSRF token
-//            csrfService.validateCsrfToken(session, csrfToken);
-//
-//            // Validate JWT token and extract user ID
-//            Long tokenUserId = jwtService.validateAndExtractUserId(httpServletRequest);
-//
-//            // Ensure the authenticated user is authorized to get this resource
-//            if (!tokenUserId.equals(id)) {
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User is not authorized to get this resource");
-//            }
-//
-//            // Get and return the user
-//            Optional<CustomUser> user = userService.getUser(id);
-//            UserResponse userResponse = UserResponse.builder()
-//                    .id(user.get().getId())
-//                    .email(user.get().getUsername())
-//                    .role(user.get().getRole().toString())
-//                    .build();
-//            return ResponseEntity.ok(userResponse);
-//
-//        } catch (CsrfException e) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-//        } catch (JwtException e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//        }
-//    }
-
+    @GetMapping({"users/{id}"})
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> getUserById(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        Long tokenUserId = this.jwtService.extractUserId(token);
+        if (!tokenUserId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Authorization Denied");
+        } else {
+            try {
+                UserResponse user = this.userService.getUser(id);
+                return ResponseEntity.ok(user);
+            } catch (RuntimeException var6) {
+                RuntimeException e = var6;
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+        }
+    }
 
     @GetMapping({"/admin/getAll"})
     @PreAuthorize("hasRole('ADMIN')")

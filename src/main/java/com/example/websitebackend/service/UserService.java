@@ -19,74 +19,49 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(final UserRepository userRepository, final PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public String getToken(HttpServletRequest request) {
-        String token = null;
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("jwt")) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
-        return token;
-    }
-
-
-    public void updateUser(Long id, UpdateUserRequest request) {
-        CustomUser user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found."));
+    public UserResponse updateUser(Long id, UpdateUserRequest request) {
+        CustomUser user = (CustomUser)this.userRepository.findById(id).orElseThrow(() -> {
+            return new RuntimeException("User not found.");
+        });
         boolean isUpdated = false;
-
-        // Update email only if a new one is provided
-        String newEmail = request.getEmail();
-        if (newEmail != null && !newEmail.isBlank() && !newEmail.equals(user.getEmail())) {
-            if (request.getPassword() == null || request.getPassword().isBlank()) {
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            if (request.getPassword() == null || request.getPassword().isEmpty()) {
                 throw new RuntimeException("Password is required to update email.");
             }
 
-            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            if (!this.passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new RuntimeException("Incorrect password.");
             }
 
-            if (userRepository.existsByEmail(newEmail)) {
+            if (this.userRepository.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email address already in use.");
             }
 
-            user.setEmail(newEmail);
+            user.setEmail(request.getEmail());
             isUpdated = true;
         }
 
-        // Update password only if a new one is provided
-        String newPassword = request.getNewPassword();
-        if (newPassword != null && !newPassword.isBlank()) {
-            if (request.getOldPassword() == null || request.getOldPassword().isBlank()) {
+        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
+            if (request.getOldPassword() == null || request.getOldPassword().isEmpty()) {
                 throw new RuntimeException("Old password is required to update password.");
             }
 
-            if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            if (!this.passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
                 throw new RuntimeException("Incorrect old password.");
             }
 
-            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setPassword(this.passwordEncoder.encode(request.getNewPassword()));
             isUpdated = true;
         }
 
         if (!isUpdated) {
             throw new RuntimeException("No updates were made.");
+        } else {
+            CustomUser updatedUser = (CustomUser)this.userRepository.save(user);
+            return this.mapToUserResponse(updatedUser);
         }
-
-        userRepository.save(user);
     }
 
-
-    // Delete the user
     public void deleteUser(Long id, DeleteUserRequest request) {
         CustomUser user = (CustomUser)this.userRepository.findById(id).orElseThrow(() -> {
             return new RuntimeException("User not found.");
@@ -102,18 +77,23 @@ public class UserService {
         }
     }
 
-    public Optional<CustomUser> getUser(Long userId) {
+    public UserResponse getUser(Long userId) {
         CustomUser user = (CustomUser)this.userRepository.findById(userId).orElseThrow(() -> {
             return new RuntimeException("User not found with id: " + userId);
         });
-        return userRepository.findById(userId);
+        return this.mapToUserResponse(user);
     }
 
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream().map(this::mapToUserResponse).collect(Collectors.toList());
+        return (List)this.userRepository.findAll().stream().map(this::mapToUserResponse).collect(Collectors.toList());
     }
 
     private UserResponse mapToUserResponse(CustomUser user) {
         return new UserResponse(user.getId(), user.getEmail(), user.getRole().name());
+    }
+
+    public UserService(final UserRepository userRepository, final PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 }

@@ -20,72 +20,22 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users/auth")
+@RequestMapping({"/api/users/auth"})
 public class AuthenticationController {
-
     private final AuthenticationService service;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
 
-    public AuthenticationController(final AuthenticationService service, UserRepository userRepository, JwtService jwtService) {
+    @PostMapping({"/register"})
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(this.service.register(request));
+    }
+
+    @PostMapping({"/authenticate"})
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody AuthenticationRequest request) {
+        return ResponseEntity.ok(this.service.authenticate(request));
+    }
+
+    public AuthenticationController(final AuthenticationService service) {
         this.service = service;
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
     }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request, HttpServletResponse response, HttpSession session) {
-        return this.service.register(request, response, session);
-    }
-
-    @PostMapping("/authenticate")
-    public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequest request, HttpServletResponse response, HttpSession session) {
-        return this.service.authenticate(request, response, session);
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Expire the JWT cookie
-        Cookie jwtCookie = new Cookie("jwt", null);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(0); // Expire immediately
-        response.addCookie(jwtCookie);
-
-        // Expire the CSRF cookie if you're using one
-        Cookie csrfCookie = new Cookie("csrfToken", null);
-        csrfCookie.setHttpOnly(false);
-        csrfCookie.setSecure(true);
-        csrfCookie.setPath("/");
-        csrfCookie.setMaxAge(0);
-        response.addCookie(csrfCookie);
-
-        return ResponseEntity.ok("Logged out successfully.");
-    }
-
-    @GetMapping("/check")
-    public ResponseEntity<?> checkAuth(HttpServletRequest request) {
-        try {
-            Long userId = jwtService.validateAndExtractUserId(request);
-
-            // Fetch user from database (optional depending on what info you want to return)
-            CustomUser user = userRepository.findById(userId).orElse(null);
-            if (user == null) {
-                return ResponseEntity.status(401).body(Map.of("loggedIn", false));
-            }
-
-            return ResponseEntity.ok(Map.of(
-                    "loggedIn", true,
-                    "username", user.getEmail(),
-                    "userId", user.getId(),
-                    "role", user.getRole()
-            ));
-        } catch (JwtException e) {
-            return ResponseEntity.status(401).body(Map.of("loggedIn", false, "error", e.getMessage()));
-        }
-    }
-
-
 }
 
