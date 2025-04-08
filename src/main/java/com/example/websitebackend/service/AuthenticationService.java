@@ -70,7 +70,8 @@ public class AuthenticationService {
         jwtCookie.setMaxAge(3600);
         response.addCookie(jwtCookie);
 
-        // Return tokens for Postman use
+        // Log the response for debugging
+        System.out.println("User registered and authenticated. JWT Token: " + jwtToken);
         Map<String, String> tokens = new HashMap<>();
         tokens.put("message", "User registered and authenticated successfully");
         tokens.put("jwtToken", jwtToken);
@@ -78,6 +79,7 @@ public class AuthenticationService {
 
         return ResponseEntity.ok(tokens);
     }
+
 
 
     public ResponseEntity<?> authenticate(AuthenticationRequest request, HttpServletResponse response, HttpSession session) {
