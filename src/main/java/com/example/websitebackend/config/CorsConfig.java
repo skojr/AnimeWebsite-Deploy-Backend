@@ -16,27 +16,15 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("*"));
         // Frontend URL (Vite dev server)
-//        configuration.setAllowedOrigins(List.of("https://animewebsite-deploy-frontend.onrender.com"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "X-CSRF-TOKEN"
-        ));
-        configuration.setExposedHeaders(List.of(
-                "Authorization",
-                "X-CSRF-TOKEN"
-        ));
-
-        // Required to allow cookies (JWT, CSRF) to be sent
+        configuration.setAllowedOrigins(List.of("https://animewebsite-deploy-frontend.onrender.com"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 }
