@@ -20,7 +20,7 @@ public class CorsConfig {
         configuration.setAllowedOrigins(List.of("https://animewebsite-deploy-frontend.onrender.com"));
 
         // If you want Postman to work too (no origin), allow all for dev:
-//        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
