@@ -3,26 +3,34 @@ package com.example.websitebackend.controller;
 import com.example.websitebackend.auth.AuthenticationRequest;
 import com.example.websitebackend.auth.AuthenticationResponse;
 import com.example.websitebackend.auth.RegisterRequest;
+import com.example.websitebackend.auth.UserResponse;
+import com.example.websitebackend.model.CustomUser;
+import com.example.websitebackend.repository.UserRepository;
 import com.example.websitebackend.service.AuthenticationService;
 import com.example.websitebackend.service.CsrfService;
+import com.example.websitebackend.service.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/auth")
 public class AuthenticationController {
 
     private final AuthenticationService service;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public AuthenticationController(final AuthenticationService service) {
+    public AuthenticationController(final AuthenticationService service, UserRepository userRepository, JwtService jwtService) {
         this.service = service;
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -55,6 +63,29 @@ public class AuthenticationController {
 
         return ResponseEntity.ok("Logged out successfully.");
     }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAuth(HttpServletRequest request) {
+        try {
+            Long userId = jwtService.validateAndExtractUserId(request);
+
+            // Fetch user from database (optional depending on what info you want to return)
+            CustomUser user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("loggedIn", false));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "loggedIn", true,
+                    "username", user.getEmail(),
+                    "userId", user.getId(),
+                    "role", user.getRole()
+            ));
+        } catch (JwtException e) {
+            return ResponseEntity.status(401).body(Map.of("loggedIn", false, "error", e.getMessage()));
+        }
+    }
+
 
 }
 
