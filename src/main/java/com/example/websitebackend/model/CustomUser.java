@@ -25,7 +25,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class CustomUser implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true, nullable = false)
     private Long id;
 
