@@ -17,7 +17,7 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Frontend URL (Vite dev server)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("https://animewebsite-deploy-frontend.onrender.com"));
 
         // If you want Postman to work too (no origin), allow all for dev:
 //        configuration.setAllowedOriginPatterns(List.of("*"));
