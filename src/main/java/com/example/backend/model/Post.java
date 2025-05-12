@@ -3,7 +3,6 @@ package com.example.backend.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "posts")
@@ -19,15 +18,15 @@ public class Post {
     @Column(nullable = false)
     private String content;
 
-    @Column(nullable = false)
-    private LocalDateTime created_at;
+    @Column(name="created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     public LocalDateTime getCreated_at() {
-        return created_at;
+        return createdAt;
     }
 
-    public void setCreated_at(LocalDateTime created_at) {
-        this.created_at = created_at;
+    public void setCreated_at(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public User getAuthor() {

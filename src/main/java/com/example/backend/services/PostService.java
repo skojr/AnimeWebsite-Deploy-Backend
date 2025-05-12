@@ -5,6 +5,8 @@ import com.example.backend.model.Post;
 import com.example.backend.model.User;
 import com.example.backend.repositories.PostRepository;
 import com.example.backend.repositories.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -23,15 +25,15 @@ public class PostService {
         this.postRepository = postRepository;
     }
 
-    public List<Post> getPostsForUser(Authentication authentication) {
+    public Page<Post> getMyPosts(Authentication authentication, Pageable pageable) {
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AccessDeniedException("User not found"));
-        return user.getPosts();
+        return postRepository.findByAuthor(user, pageable);
     }
 
-    public List<Post> getAllPosts(Authentication authentication) {
-        return postRepository.findAll();
+    public Page<Post> getAllPosts(Authentication authentication, Pageable pageable) {
+        return postRepository.findAll(pageable);
     }
 
     public Post createPost(PostRequestDTO postRequestDTO, Authentication authentication) {

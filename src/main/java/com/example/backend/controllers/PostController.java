@@ -4,15 +4,14 @@ import com.example.backend.dto.PostRequestDTO;
 import com.example.backend.dto.PostResponseDTO;
 import com.example.backend.model.Post;
 import com.example.backend.services.PostService;
-import jakarta.persistence.GeneratedValue;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -25,37 +24,40 @@ public class PostController {
 
     @GetMapping("/get-all-posts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PostResponseDTO>> getAllPosts(Authentication authentication) {
-        List<Post> posts = postService.getAllPosts(authentication);
-        List<PostResponseDTO> response = posts.stream()
-                .map(post -> new PostResponseDTO(
-                        "Post retrieved!",
-                        post.getAuthor().getUsername(),
-                        post.getId(),
-                        post.getCreated_at(),
-                        post.getContent(),
-                        post.getTitle()
-                ))
-                .collect(Collectors.toList());
+    public ResponseEntity<Page<PostResponseDTO>> getAllPosts(Authentication authentication,
+                                                             @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "4") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Post> posts = postService.getAllPosts(authentication, pageable);
+
+        Page<PostResponseDTO> response = posts.map(post -> new PostResponseDTO(
+                "Post retrieved!",
+                post.getAuthor().getUsername(),
+                post.getId(),
+                post.getCreated_at(),
+                post.getContent(),
+                post.getTitle()
+        ));
 
         return ResponseEntity.ok(response);
     }
 
+
     @GetMapping("/get-my-posts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<PostResponseDTO>> getMyPosts(Authentication authentication) {
-        List<Post> posts = postService.getPostsForUser(authentication);
+    public ResponseEntity<Page<PostResponseDTO>> getMyPosts(Authentication authentication, @RequestParam(defaultValue = "0") int page,
+                                                            @RequestParam(defaultValue = "4") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Post> posts = postService.getMyPosts(authentication, pageable);
 
-        List<PostResponseDTO> response = posts.stream()
-                .map(post -> new PostResponseDTO(
-                        "Post retrieved!",
-                        post.getAuthor().getUsername(),
-                        post.getId(),
-                        post.getCreated_at(),
-                        post.getContent(),
-                        post.getTitle()
-                ))
-                .collect(Collectors.toList());
+        Page<PostResponseDTO> response = posts.map(post -> new PostResponseDTO(
+                "Post retrieved!",
+                post.getAuthor().getUsername(),
+                post.getId(),
+                post.getCreated_at(),
+                post.getContent(),
+                post.getTitle()
+        ));
 
         return ResponseEntity.ok(response);
     }
