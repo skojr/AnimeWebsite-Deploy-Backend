@@ -2,6 +2,7 @@ package com.example.backend.controllers;
 
 import com.example.backend.dto.AuthResponseDTO;
 import com.example.backend.dto.LoginRequestDTO;
+import com.example.backend.dto.LoginResponseDTO;
 import com.example.backend.dto.UserResponseDTO;
 import com.example.backend.model.User;
 import com.example.backend.repositories.UserRepository;
@@ -38,30 +39,29 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequestDTO.getEmail(),  // Assuming you authenticate by email
+                        loginRequestDTO.getUsername(),  // Assuming you authenticate by email
                         loginRequestDTO.getPassword() // Raw password input
                 )
         );
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return jwtService.generateToken(userDetails.getUsername());
+        String jwtToken = jwtService.generateToken(userDetails.getUsername());
+        return ResponseEntity.ok(new LoginResponseDTO(jwtToken, "User with username " + userDetails.getUsername() + " logged in successfully."));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
-     if (userRepository.existsByEmail(user.getEmail())) {
-         return ResponseEntity.badRequest().body("Error: Email is already taken!");
+    public ResponseEntity<AuthResponseDTO> register(@RequestBody User user) {
 
-     }
+        if (userRepository.existsByUsername(user.getUsername())) {
+            return ResponseEntity.badRequest().body(new AuthResponseDTO("Error: Username is already taken!"));
+        }
 
-     if (userRepository.existsByUsername(user.getUsername())) {
-         return ResponseEntity.badRequest().body("Error: Username is already taken!");
-     }
-        // Create new user's account
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully!");
+
+        return ResponseEntity.ok(new AuthResponseDTO(user, "User registered successfully."));
     }
+
 }

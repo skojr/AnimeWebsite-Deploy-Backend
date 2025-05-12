@@ -4,13 +4,15 @@ import com.example.backend.model.User;
 
 public class UserResponseDTO {
     private String username;
-    private Long id;
-    private String email;
+    private String message;
 
-    public UserResponseDTO(User savedUser) {
+    public UserResponseDTO(User savedUser, String message) {
         this.username = savedUser.getUsername();
-        this.id = savedUser.getId();
-        this.email = savedUser.getEmail();
+        this.message = message;
+    }
+
+    public UserResponseDTO(String message) {
+        this.message = message;
     }
 
     public String getUsername() {
@@ -21,20 +23,12 @@ public class UserResponseDTO {
         this.username = username;
     }
 
-    public Long getId() {
-        return id;
+    public String getMessage() {
+        return message;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
 }

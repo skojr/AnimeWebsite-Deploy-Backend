@@ -4,13 +4,23 @@ import com.example.backend.model.User;
 
 public class AuthResponseDTO {
     private String username;
-    private String email;
-    private Long id;
+    private String message;
 
-    public AuthResponseDTO(User user) {
+    public AuthResponseDTO(User user, String message) {
         this.username = user.getUsername();
-        this.email = user.getEmail();
-        this.id = user.getId();
+        this.message = message;
+    }
+
+    public AuthResponseDTO(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getUsername() {
@@ -19,21 +29,5 @@ public class AuthResponseDTO {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 }

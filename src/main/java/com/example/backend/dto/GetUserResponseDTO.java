@@ -1,24 +1,26 @@
 package com.example.backend.dto;
 
+import com.example.backend.model.User;
+
 public class GetUserResponseDTO {
-    private Long id;
-    private String email;
     private String username;
+    private String message;
 
-    public Long getId() {
-        return id;
+    public GetUserResponseDTO(User user, String message) {
+        this.username = user.getUsername();
+        this.message = message;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public GetUserResponseDTO(String message) {
+        this.message = message;
     }
 
-    public String getEmail() {
-        return email;
+    public String getMessage() {
+        return message;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getUsername() {

@@ -1,7 +1,7 @@
 package com.example.backend.dto;
 
 public class LoginRequestDTO {
-    private String email;
+    private String username;
 
     public String getPassword() {
         return password;
@@ -11,12 +11,12 @@ public class LoginRequestDTO {
         this.password = password;
     }
 
-    public String getEmail() {
-        return email;
+    public String getUsername() {
+        return username;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     private String password;
