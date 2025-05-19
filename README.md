@@ -1,6 +1,9 @@
 # *Anime Discovery & Social Hub Backend*
 Created by: **Samuel Obeng**
 
+## Deployment
+Deployed via Render using Docker **https://animewebsite-deployment-v1-0-1.onrender.com**
+
 ## Features
 - **Manage user authentication and authorization w/ Spring Security**
   - Users can sign up, log in, and securely manage their accounts
